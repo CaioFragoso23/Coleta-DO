@@ -41,6 +41,7 @@ export class DiarioOficialService extends DiarioOficial {
       while (!fileFound && Date.now() < timeout) {
         const files = fs.readdirSync(downloadPath);
         fileFound = files.length > 0;
+        fileFound = files.some((f) => !f.endsWith(".crdownload"));
         if (!fileFound) await new Promise((r) => setTimeout(r, 500));
       }
       if (fileFound) {
