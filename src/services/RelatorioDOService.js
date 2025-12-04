@@ -24,10 +24,6 @@ let options = {
   pagerender: render_page,
 };
 
-let dataBuffer = fs.readFileSync(
-  "C:/Users/Solange/Desktop/Projetos/DiarioOficialScraper/src/utils/rio_de_janeiro_2025-09-15_completo.pdf"
-);
-
 export class RelatorioDOService extends RelatorioDO {
   /*   test() {
     PDF(dataBuffer).then(function (data) {
@@ -53,40 +49,47 @@ export class RelatorioDOService extends RelatorioDO {
   } */
 
   get_pdf_info() {
+    const dataBuffer = fs.readFileSync(this.file);
     PDF(dataBuffer).then(function (data) {
       console.log(data.info);
     });
   }
 
   get_pdf_numpages() {
+    const dataBuffer = fs.readFileSync(this.file);
     PDF(dataBuffer).then(function (data) {
       console.log(data.numpages);
     });
   }
 
-  get_pdf_text() {
-    PDF(dataBuffer).then(function (data) {
-      /* console.log(data.text); */
-      data.text;
-      fs.writeFileSync(
-        "C:/Users/Solange/Desktop/Projetos/DiarioOficialScraper/src/utils/rio_de_janeiro_2025-09-15_completo.txt"
-      );
-      /* return data.text; */
-    });
+  async get_pdf_text() {
+    try {
+      console.log(`Arquivo é ${this.file}`);
+      while (!fs.existsSync(this.file)) {
+        await new Promise((r) => setTimeout(r, 500));
+      }
+      const dataBuffer = fs.readFileSync(this.file);
+      const txtPath = this.file.replace(".pdf", ".txt");
+      console.log(`Caminho Novo Arquivo é ${txtPath}`);
+      PDF(dataBuffer).then(function (data) {
+        fs.writeFileSync(txtPath, data.text);
+      });
+      console.log("Arquivo de texto gerado:", txtPath);
+      return txtPath;
+    } catch (error) {
+      console.error("Erro ao extrair texto do PDF:", error);
+      return null;
+    }
   }
 
-  get_cglf() {
-    let textoCompleto = fs.readFileSync(
-      "C:/Users/Solange/Desktop/Projetos/DiarioOficialScraper/src/utils/rio_de_janeiro_2025-09-15_completo.txt",
-      "utf8",
-      (err, data) => {
-        if (err) {
-          console.error("Error reading file:", err);
-          return;
-        }
-        console.log("file content", data);
+  get_cglf(txtPath) {
+    let textoCompleto = fs.readFileSync(txtPath, "utf8", (err, data) => {
+      if (err) {
+        console.error("Error reading file:", err);
+        return;
       }
-    );
+      console.log("file content", data);
+    });
     if (typeof textoCompleto === "string") {
       const inicioBusca = "SUBGERÊNCIA DE FISCALIZAÇÃO DE MANUTENÇÃO PREDIAL";
       const fimBusca = "SUBSECRETARIA DE CONTROLE E LICENCIAMENTO AMBIENTAL";
@@ -98,6 +101,10 @@ export class RelatorioDOService extends RelatorioDO {
       dadosExtraidos = textoCompleto
         .substring(indiceInicioPai, indiceFim)
         .trim();
+
+      const pathDadosExtraidos = txtPath.replace(".txt", "_extraido.txt");
+      fs.writeFileSync(pathDadosExtraidos, dadosExtraidos);
+      console.log("Arquivo de texto gerado:", pathDadosExtraidos);
       console.log(dadosExtraidos);
     }
   }
