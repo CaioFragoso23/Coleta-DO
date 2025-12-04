@@ -105,7 +105,7 @@ export class RelatorioDOService extends RelatorioDO {
       const pathDadosExtraidos = txtPath.replace(".txt", "_extraido.txt");
       fs.writeFileSync(pathDadosExtraidos, dadosExtraidos);
       console.log("Arquivo de texto gerado:", pathDadosExtraidos);
-      console.log(dadosExtraidos);
+      return pathDadosExtraidos;
     }
   }
 }
