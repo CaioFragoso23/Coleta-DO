@@ -18,6 +18,7 @@ async function main() {
       const txtExtraidoPath = relatorioDO.get_cglf(txtPath);
       const DOExportData = new DOExportService(txtExtraidoPath);
       await DOExportData.desserializingTxt();
+      await DOExportData.JSONToExcel();
     }
     await revistaService.delete_revista_diaria();
   }
