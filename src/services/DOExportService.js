@@ -36,7 +36,7 @@ export class DOExportService extends DOExport {
 
       /*Extraindo processos*/
       const regex =
-        /(EIS-PRO-[\d\/]+)\s+-\s+(.+?)\s+Extraída Notificação número\s+([\d\/]+)\s+Endereço do imóvel:\s+([\s\S]+?)(?=\nEIS-PRO|$|Diário Oficial)/g;
+        /(EIS-PRO-[\d\/]+)\s+-\s+(.+?)\s+Extraída Notificação número\s+([\d\/]+)\s+Endereço do imóvel:\s+([\s\S]+?)(?=EIS-PRO|$|Diário Oficial)/g;
 
       while ((match = regex.exec(limpaLinhas)) !== null) {
         dadosExtraidos.processos.push({
@@ -48,6 +48,32 @@ export class DOExportService extends DOExport {
       }
       console.log(dadosExtraidos);
       this.DOJSON = dadosExtraidos;
+    }
+  }
+
+  async buscaCep(endereco) {
+    try {
+      // Limpa o endereço para pegar apenas o logradouro (remove nº e complementos)
+      // Ex: "RUA ABADE RAMOS nº 26" -> "RUA ABADE RAMOS"
+      let logradouro = endereco.split("nº")[0].trim();
+      logradouro = logradouro.split(",")[0].trim();
+
+      // Busca na API do ViaCEP (RJ/Rio de Janeiro é fixo conforme contexto)
+      const url = `https://viacep.com.br/ws/RJ/Rio%20de%20Janeiro/${encodeURIComponent(
+        logradouro,
+      )}/json/`;
+
+      const response = await fetch(url);
+      const data = await response.json();
+
+      if (Array.isArray(data) && data.length > 0) {
+        // Retorna o primeiro resultado encontrado
+        return data[0];
+      }
+      return null;
+    } catch (error) {
+      console.log(`Erro ao buscar CEP para ${endereco}:`, error.message);
+      return null;
     }
   }
 
@@ -85,36 +111,44 @@ export class DOExportService extends DOExport {
 
         const maxId = dadosExcel.reduce(
           (max, row) => (row.CÓDIGO > max ? row.CÓDIGO : max),
-          0
+          0,
         );
         let processoID = maxId + 2;
 
-        this.DOJSON.processos.map((processo) => {
+        // let dadosParaExcel = [];
+        let dadosParaExcel = [];
+        for (const processo of this.DOJSON.processos) {
           processo.codigo = processoID;
           processoID = processoID + 2;
+
+          const dadosCep = await this.buscaCep(processo.endereco);
+          const cep = dadosCep ? dadosCep.cep : "";
 
           const entries = Object.entries(processo);
           const ultimo = entries.pop();
           entries.unshift(ultimo);
 
           processo.CÓDIGO = processo.codigo;
-          delete processo.codigo;
+          // delete processo.codigo;
 
-          processo = {
+          const newProcesso = {
             CÓDIGO: processo.codigo,
             "NOME DO CONDOMINIO": processo.entidade,
             ENDEREÇO: processo.endereco,
             BAIRRO: processo.bairro,
-            CEP: "",
+            CEP: cep,
             PROCESSO: processo.processo,
             PÁGINA: "",
             "DIA CARTA": new Date().toLocaleDateString("pt-BR"),
             "Dia D.O": this.DOJSON.expediente,
           };
-        });
 
+          dadosParaExcel.push(newProcesso);
+        }
+
+        this.EXCELJSON.processos = dadosParaExcel;
         // Adiciona os novos dados à planilha existente
-        XLSX.utils.sheet_add_json(abaExcel, this.DOJSON.processos, {
+        XLSX.utils.sheet_add_json(abaExcel, this.EXCELJSON.processos, {
           skipHeader: true,
           origin: -1,
         });

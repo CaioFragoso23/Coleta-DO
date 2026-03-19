@@ -17,7 +17,7 @@ async function main() {
     if (txtPath) {
       const txtExtraidoPath = relatorioDO.get_cglf(txtPath);
       const DOExportData = new DOExportService(txtExtraidoPath);
-      await DOExportData.desserializingTxt();
+      DOExportData.desserializingTxt();
       await DOExportData.JSONToExcel();
     }
     await revistaService.delete_revista_diaria();
