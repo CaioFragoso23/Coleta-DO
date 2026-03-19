@@ -34,7 +34,7 @@ export class DiarioOficialService extends DiarioOficial {
         downloadPath: downloadPath,
       });
 
-      await page.click("#imagemCapa"), // some button that triggers file selection
+      await page.click("#imagemCapa"), // some button that triggers file selection      
         console.log("Download iniciado. Verifique a pasta:", downloadPath);
 
       // Aguarde o download terminar (opcional: aguarde alguns segundos)

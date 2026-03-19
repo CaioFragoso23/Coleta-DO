@@ -1,3 +1,4 @@
+import { DOExportService } from "./services/DOExportService.js";
 import { DiarioOficialService } from "./services/DOScraperService.js";
 import { RelatorioDOService } from "./services/RelatorioDOService.js";
 
@@ -14,7 +15,10 @@ async function main() {
 
     const txtPath = await relatorioDO.get_pdf_text();
     if (txtPath) {
-      relatorioDO.get_cglf(txtPath);
+      const txtExtraidoPath = relatorioDO.get_cglf(txtPath);
+      const DOExportData = new DOExportService(txtExtraidoPath);
+      DOExportData.desserializingTxt();
+      await DOExportData.JSONToExcel();
     }
     await revistaService.delete_revista_diaria();
   }
